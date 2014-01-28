@@ -105,6 +105,7 @@ case "$1" in
             touch "$DOKKU_ROOT/$APP/ENV"
         fi
         cat "$DOKKU_ROOT/$APP/ENV" | grep "$REDIS_URL" || echo "export $REDIS_URL" >> "$DOKKU_ROOT/$APP/ENV"
+        cat "$DOKKU_ROOT/$APP/ENV" | grep "$REDIS_IP" || echo "export REDIS_IP=$IP" >> "$DOKKU_ROOT/$APP/ENV"
         echo
         echo "-----> $APP linked to $REDIS_IMAGE container"
     fi
