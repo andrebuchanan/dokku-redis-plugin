@@ -99,14 +99,32 @@ case "$1" in
         REDIS_IMAGE="redis/$3"
         ID=$(docker ps -a | grep "$REDIS_IMAGE":latest |  awk '{print $1}')
         IP=$(docker inspect $ID | grep IPAddress | awk '{ print $2 }' | tr -d ',"')
-        # Write REDIS_IP to app's ENV file
+
+        # Write REDIS_URL and REDIS_IP to app's ENV file
         REDIS_URL="REDIS_URL=redis://$IP:6379"
         REDIS_IP="REDIS_IP=$IP"
         if [[ ! -f "$DOKKU_ROOT/$APP/ENV" ]]; then
             touch "$DOKKU_ROOT/$APP/ENV"
         fi
-        cat "$DOKKU_ROOT/$APP/ENV" | grep "$REDIS_URL" || echo "export $REDIS_URL" >> "$DOKKU_ROOT/$APP/ENV"
-        cat "$DOKKU_ROOT/$APP/ENV" | grep "$REDIS_IP" || echo "export $REDIS_IP" >> "$DOKKU_ROOT/$APP/ENV"
+
+        _URL = $(cat "$DOKKU_ROOT/$APP/ENV" | grep "$REDIS_URL")
+        if [[ -z $_URL ]]; then
+            echo "-----> Adding REDIS_URL: $REDIS_URL"
+            echo "export $REDIS_URL" >> "$DOKKU_ROOT/$APP/ENV"
+        else
+            echo "-----> Replacing REDIS_URL with $REDIS_URL"
+            sed -i s/REDIS_URL=.*/"$REDIS_URL"/ "$DOKKU_ROOT/$APP/ENV"
+        fi
+
+        _IP = $(cat "$DOKKU_ROOT/$APP/ENV" | grep "$REDIS_IP")
+        if [[ -z $_IP ]]; then
+            echo "-----> Adding REDIS_IP: $REDIS_IP"
+            echo "export $REDIS_IP" >> "$DOKKU_ROOT/$APP/ENV"
+        else
+            echo "-----> Replacing REDIS_IP with $REDIS_IP"
+            sed -i s/REDIS_IP=.*/"$REDIS_IP"/ "$DOKKU_ROOT/$APP/ENV"
+        fi
+
         echo
         echo "-----> $APP linked to $REDIS_IMAGE container"
     fi
